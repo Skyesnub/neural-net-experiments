@@ -1,4 +1,4 @@
-# DAY 20: IMPROVING MULTICLASS CLASSIFICATION
+# DAY 21: STARTING NEURAL NETWORKS
 
 import numpy as np
 
@@ -19,7 +19,7 @@ TRUE_WEIGHTS = np.array([7,4])
 TRUE_B = 10
 
 distance = np.abs(X.T[0] + X.T[1] - 12)
-true_score = 100 - distance**2 * 5
+true_score = 100 - distance**2 * 5 + np.random.randint(-5, 6, size=len(X))
 
 #true_score = X @ TRUE_WEIGHTS + TRUE_B + np.random.randint(-15,16,size=NUM_STUDENTS//10*8)
 # will multiply the hours studied and slept by the weights, add b, then add a bit of randomness
@@ -34,7 +34,7 @@ testing_distance = np.abs(
     testing_X.T[0] + testing_X.T[1] - 12
 )
 
-testing_scores = 100 - testing_distance**2 * 5
+testing_scores = 100 - testing_distance**2 * 5 + np.random.randint(-5, 6, size=len(testing_X))
 
 testing_grade = np.zeros(NUM_STUDENTS//10*2,dtype=int)
 
@@ -94,41 +94,112 @@ def categorical_cross_entropy(y_true, y_pred, is_sparse=False):
     return np.mean(loss)
 # also not really memorizing this, but got a function that has a ton of comments!
 
+def relu(x):
+    return np.maximum(0, x)
+
 learning_rate = 0.1
 y_onehot = np.eye(5)[grade]
 n=X.shape[0]
 b = np.zeros(5)
 
+hidden_weights = np.random.randn(2,4) # the reason that random hidden weights are needed is to break symmetry
+hidden_bias = np.random.randn(4) # they will give each neuron a fresh new starting point
+
+output_weights = np.random.randn(4, 5)
+output_bias = np.zeros(5) # the 4 exists because of matrix dimensions having to match with the matrix dimensions of hidden weights
+# and bias, but the 5 is because there are 5 output classes (F,D,C,B,A)
+# X = (8000,2) so hidden_logits = (8000,4) bc (8000,2)(2,4)
+
 for i in range(10000):
-    #logits = X @ weights + b # new thingy, logits, the weights are now a matrix and there is a logit for each grade (abcdf) and each class
-    # slept and studied
-    logits = X_normalized @ weights + b # normalziing!
+    # forward pass
+    hidden_logits = X_normalized @ hidden_weights + hidden_bias # this is literally the same as before, except now using hidden weights
+    # instead of regular weights
+    # X is (8000, 2) and hidden_weights is (2,4), so hidden logits is (8000,4), meaning 8000 students, and the 4 neurons
 
-    probabilities = softmax(logits) # softmax basically has all the probabilities add up to 1, kinda like percents
+    hidden_activation = relu(hidden_logits) # relu is there so that the neural network can do nonlinear things instead
+    # of stacking linear things on top of other linear things
+    # doesn't change dimensions
 
+    output_logits = hidden_activation @ output_weights + output_bias # using the non-linearly represented input logits and
+    # the output weights, and bias to make the output logits
+    # hidden_activation is (8000,4) output_weights is (4,5), so output logits is (8000,5) meaning 8000 students 5 outputs
+
+    probabilities = softmax(output_logits) # this is the same as in d20, except now there's the relu in the mix
+
+    #loss
     loss = categorical_cross_entropy(
-        grade,
-        probabilities,
-        is_sparse=True # just a new way of finding the loss, that needs the real values, the predicted probabilites
+    grade,
+    probabilities,
+    is_sparse=True
     )
+    #print("Loss:", loss) # this is all the same as earlier
 
-    error = probabilities - y_onehot # basically the onehot thing puts a 1 wherever the actual grade is (wherever it is correct)
-    # and probabilties has the predictions, so if there is a 90% chance wherever the 1 was (0.9 compared to 1) it would be less loss
-    # and if there was a 10% chance where a 0 was it would also be less loss
-    # howveer if it was a 0.1 where a 1 was then it would be a lot of loss
+    #print("Actual:", grade[0])
+    #print("Probabilities:", probabilities[0])
+    #print("Prediction:", np.argmax(probabilities[0]))
 
-    weight_gradient = (1/n) * X_normalized.T @ error
-    bias_gradient = (1/n) * np.sum(error, axis=0)
+    #backwards pass
 
-    weights -= learning_rate * weight_gradient
-    b -= learning_rate * bias_gradient # rest is basically the same
+    output_error = probabilities - y_onehot
+    # output error will put negative numbers where the correct place was showing hey, you should put more weight here
+    # and will put pos numbers where the wrong places are saying you should put less weight here
 
-    if i % 1000 == 0:
-        print(loss)
+    output_weight_gradient = (
+        1/n
+    ) * hidden_activation.T @ output_error
+    # hidden_activation.T = (4,8000) and output_error = (8000,5) so the output weight gradient is (4,5)
+    # same shape as output weights
+    # each row is one hidden neuron, each column is one output
+    # the val [row, column] represents how much the weight should change by to reduce the loss
 
-print(weights, b)
+    output_bias_gradient = (
+        1/n
+    ) * np.sum(output_error, axis=0)
+    # shape is (5,) matching the output bias shape
+
+    hidden_error = output_error @ output_weights.T
+    # output error is (8000,5), output weights.t is (5,4)
+    # so hidden error is (8000,4) which is 8000 students and 4 neurons again!
+    # this represents how strongly each neuron is connected to each student (basically in some cases one neuron changing)
+    # may affect it much more than another neuron
+
+    relu_gradient = (hidden_logits > 0) # this makes an 8000,4 matrix of 1s and 0s (T and F) depending on if the neuron was killed by
+    # relu or not
+
+    hidden_gradient = hidden_error * relu_gradient
+    #print(hidden_gradient)
+    # this blocks the error gradient if relu made it 0, meaning the error will be ignored in this case
+
+    hidden_weight_gradient = (
+        1/n
+    ) * X_normalized.T @ hidden_gradient
+    # now the hidden gradient and the original values influence the weight gradient
+    #print(hidden_weight_gradient.shape)
+
+    hidden_bias_gradient = (1/n) * np.sum(hidden_gradient, axis=0)
+
+    output_weights -= learning_rate * output_weight_gradient
+    output_bias -= learning_rate * output_bias_gradient
+
+    hidden_weights -= learning_rate * hidden_weight_gradient
+    hidden_bias -= learning_rate * hidden_bias_gradient
+
+    if i % 100 == 0:
+        print(i, loss)
+
 
 testing_X_normalized = (testing_X - mean) / std
+
+testing_hidden_logits = testing_X_normalized @ hidden_weights + hidden_bias
+
+testing_hidden_activation = relu(testing_hidden_logits)
+
+testing_output_logits = (
+    testing_hidden_activation @ output_weights + output_bias
+)
+
+testing_probabilities = softmax(testing_output_logits)
+testing_predictions = np.argmax(testing_probabilities, axis=1)
 
 testing_grade[testing_scores >= 90] = 4   # A
 testing_grade[(testing_scores >= 80) & (testing_scores < 90)] = 3   # B
@@ -136,12 +207,6 @@ testing_grade[(testing_scores >= 65) & (testing_scores < 80)] = 2   # C
 testing_grade[(testing_scores >= 50) & (testing_scores < 65)] = 1   # D
 testing_grade[testing_scores < 50] = 0    # F
 
-#logits = testing_X @ weights + b # now using the testing values
-logits = testing_X_normalized @ weights + b # now using the testing normalized
-
-testing_probabilites = softmax(logits)
-
-testing_predictions = np.argmax(testing_probabilites, axis=1)
 accuracy = np.mean(testing_predictions == testing_grade)
 
 print("Accuracy:", accuracy) # for troubleshooting
