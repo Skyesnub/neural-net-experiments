@@ -53,6 +53,7 @@ mean = X.mean(axis=0)
 std = X.std(axis=0) # for normalizing
 
 X_normalized = (X - mean) / std
+print(X_normalized.shape)
 
 def softmax(x):
     shifted = x - np.max(x, axis=1, keepdims=True)
@@ -102,10 +103,12 @@ y_onehot = np.eye(5)[grade]
 n=X.shape[0]
 b = np.zeros(5)
 
-hidden_weights = np.random.randn(2,4) # the reason that random hidden weights are needed is to break symmetry
-hidden_bias = np.random.randn(4) # they will give each neuron a fresh new starting point
+NUM_NEURONS = 16
 
-output_weights = np.random.randn(4, 5)
+hidden_weights = np.random.randn(2,NUM_NEURONS) # the reason that random hidden weights are needed is to break symmetry
+hidden_bias = np.random.randn(NUM_NEURONS) # they will give each neuron a fresh new starting point
+
+output_weights = np.random.randn(NUM_NEURONS, 5)
 output_bias = np.zeros(5) # the 4 exists because of matrix dimensions having to match with the matrix dimensions of hidden weights
 # and bias, but the 5 is because there are 5 output classes (F,D,C,B,A)
 # X = (8000,2) so hidden_logits = (8000,4) bc (8000,2)(2,4)
