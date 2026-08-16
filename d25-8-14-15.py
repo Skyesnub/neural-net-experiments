@@ -202,33 +202,7 @@ def neural_network_multiple_hidden_layers(layer_sizes, iterations, X, y, learnin
     print(len(weights), len(biases))
     return (weights, biases)
 
-def test_my_neural_network(weights, biases, X, y):
 
-    if len(weights) != len(biases):
-        raise ValueError(
-            f"Length of weights and biases do not match, "
-            f"{len(weights)} != {len(biases)}"
-        )
-
-    activation = X
-
-    # hidden
-    for i in range(len(weights) - 1):
-        logits = activation @ weights[i] + biases[i]
-        activation = relu(logits)
-
-    # output
-    output_logits = activation @ weights[-1] + biases[-1]
-
-    probabilities = softmax(output_logits)
-
-    predictions = np.argmax(probabilities, axis=1)
-
-    accuracy = np.mean(predictions == y)
-
-    print(f"Accuracy: {accuracy}")
-
-    return accuracy
     
     
 def neural_network_one_hidden_layer(num_neurons, iterations, X, y, num_outputs, learning_rate): # gonna assume X is normalized for this
@@ -290,45 +264,69 @@ def neural_network_one_hidden_layer(num_neurons, iterations, X, y, num_outputs, 
 
     return (hidden_weights, hidden_bias, output_weights, output_bias)
 
-hidden_weights, hidden_bias, output_weights, output_bias = neural_network_one_hidden_layer(
-    16, 10000, X_normalized, grade, 5, 0.1
-) # order: num_neurons, iterations, X, y, num_outputs, learning_rate
+def test_my_neural_network(weights, biases, X, y, outputs):
+
+    if len(weights) != len(biases):
+        raise ValueError(
+            f"Length of weights and biases do not match, "
+            f"{len(weights)} != {len(biases)}"
+        )
+
+    activation = X
+
+    # hidden
+    for i in range(len(weights) - 1):
+        logits = activation @ weights[i] + biases[i]
+        activation = relu(logits)
+
+    # output
+    output_logits = activation @ weights[-1] + biases[-1]
+
+    probabilities = softmax(output_logits)
+
+    predictions = np.argmax(probabilities, axis=1)
+
+    accuracy = np.mean(predictions == y)
+
+    confusion_matrix = np.zeros((outputs, outputs),dtype=int)
+
+    for actual,predicted in zip(y, predictions):
+        confusion_matrix[actual, predicted] += 1
+
+    return accuracy, confusion_matrix
+
+
+testing_grade[testing_scores >= 90] = 4
+testing_grade[(testing_scores >= 80) & (testing_scores < 90)] = 3
+testing_grade[(testing_scores >= 65) & (testing_scores < 80)] = 2
+testing_grade[(testing_scores >= 50) & (testing_scores < 65)] = 1
+testing_grade[testing_scores < 50] = 0 # kinda deleted this part and then realized i needed it
 
 
 testing_X_normalized = (testing_X - mean) / std
 
-testing_hidden_logits = testing_X_normalized @ hidden_weights + hidden_bias
-
-testing_hidden_activation = relu(testing_hidden_logits)
-
-testing_output_logits = (
-    testing_hidden_activation @ output_weights + output_bias
-)
-
-testing_probabilities = softmax(testing_output_logits)
-testing_predictions = np.argmax(testing_probabilities, axis=1)
-
-testing_grade[testing_scores >= 90] = 4   # A
-testing_grade[(testing_scores >= 80) & (testing_scores < 90)] = 3   # B
-testing_grade[(testing_scores >= 65) & (testing_scores < 80)] = 2   # C
-testing_grade[(testing_scores >= 50) & (testing_scores < 65)] = 1   # D
-testing_grade[testing_scores < 50] = 0    # F
-
-accuracy = np.mean(testing_predictions == testing_grade)
-
-print("Accuracy:", accuracy) # for troubleshooting
-
-confusion_matrix = np.zeros((5,5),dtype=int)
+"""confusion_matrix = np.zeros((5,5),dtype=int)
 
 for actual,predicted in zip(testing_grade, testing_predictions): # this loop will just add a 1 to wherever the predictions and actual
     confusion_matrix[actual,predicted] += 1 # grade was
 # f should be on top a should be on bottom
 
-print(confusion_matrix)
+print(confusion_matrix)"""
 
-weights, biases = neural_network_multiple_hidden_layers([2,8,8,5], 10000, X_normalized, grade, 0.1)
-test_my_neural_network(weights, biases, testing_X_normalized, testing_grade)
+print("Actual:", np.bincount(testing_grade, minlength=5))
 
+# multiple layers
+weights, biases = neural_network_multiple_hidden_layers([2,32,16,8,5], 10000, X_normalized, grade, 0.1)
+mult_layer_accuracy, mult_confusion = test_my_neural_network(weights, biases, testing_X_normalized, testing_grade, 5)
+
+hidden_weights, hidden_bias, output_weights, output_bias = neural_network_one_hidden_layer(
+    16, 10000, X_normalized, grade, 5, 0.1
+) # order: num_neurons, iterations, X, y, num_outputs, learning_rate
+slweights = [hidden_weights, output_weights]
+slbiases = [hidden_bias, output_bias]
+single_layer_accuracy, sl_confusion = test_my_neural_network(slweights, slbiases, testing_X_normalized, testing_grade, 5)
+
+print(f"Multiple layer accuracy: {mult_layer_accuracy}\nMulti layer confusion matrix: \n{mult_confusion}\nSingle layer accuracy: {single_layer_accuracy}\nSingle layer confusion:\n {sl_confusion}")
 
 
 
