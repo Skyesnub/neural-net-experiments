@@ -160,7 +160,10 @@ def neural_network_multiple_hidden_layers(layer_sizes, iterations, X, y, learnin
         )
 
         if i % 100 == 0:
-            print(i, loss)
+            print("iterations:", i,
+                  "loss:", loss,
+                  "learning rate:", learning_rate
+                  )
 
         loss_lst.append(loss)
 
