@@ -129,7 +129,7 @@ def neural_network_multiple_hidden_layers(layer_sizes, iterations, X, y, learnin
     for i in range(len(layer_sizes)-1):
         if (use_He):
             weights.append(np.random.randn(layer_sizes[i], layer_sizes[i+1]) * np.sqrt(2 / layer_sizes[i])) 
-            biases.append(np.random.randn(layer_sizes[i+1])) # He initialization is typically only applied to the weights
+            biases.append(np.zeros(layer_sizes[i+1])) # He initialization is typically only applied to the weights
             # of a neural nework
             # it seems to help a lot with the random initialization of a neural network and keeping that more controlled
             # will prevent really massive nn's from dying due to random initialization
@@ -302,20 +302,23 @@ def neural_network_multiple_hidden_layers(layer_sizes, iterations, X, y, learnin
             # ---UPDATE---
             weights[l] -= learning_rate * (
                 weight_moment_corrected
-                / (np.sqrt(weight_squared_corrected[l]) + 1e-6)
+                / (np.sqrt(weight_squared_corrected[l]) + 1e-3)
             ) # final update: first moment is essentially the direction, while the 2nd moment (squared_gradient_averages)
-            # is essentially the magnitude. 1e-6 is to prevent division by 0
+            # is essentially the magnitude. epsilon is to prevent division by 0
 
             biases[l] -= learning_rate * (
                 bias_moment_corrected
-                / (np.sqrt(bias_squared_corrected[l]) + 1e-6)
+                / (np.sqrt(bias_squared_corrected[l]) + 1e-3)
             )
 
-        """        if i % 1 == 0:
-            print(
-                "max activation:",
-                np.max(np.abs(activation))
-    )""" # reason i made it i % 1 was because it has to be incredibly small to see it explode
+            if not np.all(np.isfinite(weight_moments[l])):
+                print("BAD WEIGHT MOMENT", l)
+
+            if not np.all(np.isfinite(squared_gradient_averages[l])):
+                print("BAD SQUARED GRADIENT", l)
+
+            if not np.all(np.isfinite(weight_squared_corrected)):
+                print("BAD CORRECTED SQUARED GRADIENT", l)
 
         if i % 1000 == 0:
             for m in range(len(activations_lst)):
@@ -345,8 +348,17 @@ def test_my_neural_network(weights, biases, X, y, outputs):
 
     # hidden
     for i in range(len(weights) - 1):
+
         logits = activation @ weights[i] + biases[i]
         activation = relu(logits)
+
+        print(
+            "Layer", i,
+            "max activation:", np.max(np.abs(logits)),
+            "finite:", np.all(np.isfinite(logits)),
+            "max weights:", np.max(weights[i]),
+            "max biases:", np.max(biases[i])
+        )
 
     # output
     output_logits = activation @ weights[-1] + biases[-1]
@@ -358,6 +370,13 @@ def test_my_neural_network(weights, biases, X, y, outputs):
     accuracy = np.mean(predictions == y)
 
     confusion_matrix = np.zeros((outputs, outputs),dtype=int)
+
+    print(
+        "Final activation max:", np.max(np.abs(activation)),
+        "Final weights max:", np.max(np.abs(weights[-1])),
+        "Weights finite:", np.all(np.isfinite(weights[-1]))
+    )
+
 
     for actual,predicted in zip(y, predictions):
         confusion_matrix[actual, predicted] += 1
