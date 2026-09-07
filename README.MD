@@ -1,6 +1,6 @@
 # Neural Net Experiments
 
-A chronological set of Python experiments documenting a hands-on introduction to machine learning and neural networks. The project starts with NumPy fundamentals and gradually builds toward regression, classification, backpropagation, multi-layer networks, validation, and mini-batch training.
+A chronological set of Python experiments documenting a hands-on introduction to machine learning and neural networks. The project starts with NumPy fundamentals and gradually builds toward regression, classification, backpropagation, multi-layer networks, validation, mini-batch training, and optimization methods.
 
 The emphasis is on learning the mechanics: most models are implemented directly with NumPy instead of relying on a deep-learning framework. The scripts retain explanatory comments and intermediate output, so they are intended to be read, modified, and run as individual experiments—not imported as a production package.
 
@@ -13,7 +13,8 @@ Each `d<day>-<date>.py` file is a self-contained daily exercise. The files are o
 | NumPy foundations | Days 1–9 | arrays, indexing and slicing, broadcasting, statistics, matrices, randomness, simulation, vectors, dot products, cosine similarity, and matrix multiplication |
 | Classical ML foundations | Days 10–17 | k-nearest neighbors, linear regression, numerical and analytical gradients, loss functions, and vectorized regression |
 | Classification | Days 18–20 | logistic regression, sigmoid, binary cross-entropy, softmax, categorical cross-entropy, and multiclass prediction |
-| Neural networks | Days 21–27 | ReLU networks, backpropagation, decision-region graphs, validation and hyperparameter search, multiple hidden layers, He initialization, and mini-batch training |
+| Neural networks and optimization | Days 21–30 | ReLU networks, backpropagation, decision-region graphs, validation and hyperparameter search, multiple hidden layers, He initialization, mini-batches, learning-rate decay, momentum, and Adam |
+| Concept review | Day 31 | A written review of network shapes, forward propagation, backpropagation, and Adam |
 
 ## Learning path
 
@@ -46,14 +47,18 @@ Each `d<day>-<date>.py` file is a self-contained daily exercise. The files are o
 | 25 | `d25-8-14-15.py` | Generalizing a network to support one or multiple hidden layers. |
 | 26 | `d26-8-16.py` | Multi-layer training improvements and He initialization. |
 | 27 | `d27-8-16.py` | Mini-batch training, shuffled batches, loss tracking, and testing. |
+| 28 | `d28-8-18.py` | Learning-rate reduction when loss improvement stalls. |
+| 29 | `d29-8-19.py` | Momentum-based gradient updates and loss visualization. |
+| 30 | `d30-8-24-26.py` | An Adam optimizer experiment with first and second moments plus bias correction. |
+| 31 | `d31-8-30-9-6.MD` | Written review of network foundations, shapes, forward passes, backpropagation, and Adam. |
 
 `numpy-testing.py` contains smaller scratch experiments and helper-function practice.
 
-## Featured experiment: batched neural network
+## Featured experiments: neural-network training
 
-The latest exercise, `d27-8-16.py`, trains a fully connected classifier on synthetic student data. The input features are hours studied and hours slept; the model predicts one of five grade bands: `F`, `D`, `C`, `B`, or `A`.
+The later exercises train fully connected classifiers on synthetic student data. The input features are hours studied and hours slept; the model predicts one of five grade bands: `F`, `D`, `C`, `B`, or `A`.
 
-Its `batched_nn` function accepts a layer layout such as `[2, 8, 8, 5]`, then:
+The Day 27 `batched_nn` function accepts a layer layout such as `[2, 8, 8, 5]`, then:
 
 1. initializes every dense layer (with optional He initialization);
 2. runs a forward pass using ReLU hidden activations and a softmax output;
@@ -61,13 +66,18 @@ Its `batched_nn` function accepts a layer layout such as `[2, 8, 8, 5]`, then:
 4. propagates gradients backward through each layer; and
 5. updates weights and biases one shuffled mini-batch at a time.
 
-The script reports training progress, evaluates a held-out test set with a confusion matrix, and plots the loss by epoch.
+It reports training progress, evaluates a held-out test set with a confusion matrix, and plots loss by epoch. The following scripts continue that same from-scratch model:
+
+- Day 28 reduces the learning rate when loss improvement plateaus.
+- Day 29 adds velocity-based momentum to weight and bias updates.
+- Day 30 explores Adam-style updates using exponentially weighted first and second gradient moments with bias correction.
+- Day 31 records a written check-in on how the network’s shapes, forward pass, backpropagation, and optimizer fit together.
 
 ## Requirements
 
 - Python 3.10 or newer is recommended.
 - [NumPy](https://numpy.org/) is required by every main experiment.
-- [Matplotlib](https://matplotlib.org/) is required for the plotting exercises (Days 22, 23, and 27).
+- [Matplotlib](https://matplotlib.org/) is required for the plotting exercises (Days 22, 23, 27, 29, and 30).
 - [scikit-learn](https://scikit-learn.org/) is used only in Day 17 for comparison with `LinearRegression`.
 
 Install the dependencies in a virtual environment:
@@ -85,16 +95,16 @@ Scripts are independent and should be run from the repository root:
 ```bash
 python3 d1-7-25.py
 python3 d17-8-3.py
-python3 d27-8-16.py
+python3 d30-8-24-26.py
 ```
 
-Some scripts generate different results on each run because they create synthetic data with NumPy randomness. Days 22, 23, and 27 open Matplotlib windows; close the window to let the script finish. Day 18 prompts for desired study and sleep hours after training.
+Some scripts generate different results on each run because they create synthetic data with NumPy randomness. Days 22, 23, 27, 29, and 30 open Matplotlib windows; close the window to let the script finish. Day 18 prompts for desired study and sleep hours after training.
 
-For a good guided tour, run the files in day order. If you want to start with a complete neural-network example, begin with `d27-8-16.py` and then trace backward through Days 26–21.
+For a good guided tour, run the files in day order. If you want to start with the most advanced optimizer experiment, begin with `d30-8-24-26.py` and then trace backward through Days 29–21. Day 31 is a Markdown review note and is meant to be read rather than executed.
 
 ## Project conventions and scope
 
-- Source filenames encode the learning day and the date of the exercise.
+- Source filenames encode the learning day and the date of the exercise; Day 31 is a Markdown review note rather than an executable script.
 - Most scripts run immediately when executed and print their observations, diagnostics, predictions, accuracy, or loss values to the terminal.
 - Datasets are generated in code. There are no external data files or downloads.
 - Code intentionally favors explicit, commented steps over library abstractions, making the underlying linear algebra and gradient calculations visible.
