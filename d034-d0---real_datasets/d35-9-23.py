@@ -3,6 +3,11 @@
 import numpy as np
 import pandas as pd
 
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+print("Current Working Directory:", os.getcwd()) # binding the working directory to smallest folder the python file is in
+# this will make it so it should work both in terminal and vsCode when i have neural-net-exp open
+
 NUM_STUDENTS = 1000
 
 data = pd.read_csv(
