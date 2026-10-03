@@ -16,6 +16,18 @@ warnings.filterwarnings('ignore', category=RuntimeWarning) # warnings are annoyi
 rng = np.random.default_rng()
 x_classes = rng.choice(11, size=4, replace=False)
 
+x_classes = np.array([2, 3, 0, 8]) # fixing the training columns to 0 7 1 and 10 because they work well together to 
+# provide a conclusive answer
+
+# really bad combos (and losses):
+# 2 3 0 8: 0.947
+# 3 7 0 2: 0.940
+# 4 7 3 5: 0.945
+# good combo will probably still be 0 7 10 1
+
+# main conclusion from this garbage experiment is that the garbage isn't actually doing too much to the nn, rather
+# some classes of the nn just don't converge well / aren't conclusive
+
 print("Classes Picked:", x_classes)
 
 data = pd.read_csv(
@@ -28,10 +40,11 @@ one_to_ten = data.iloc[:, -1].to_numpy() # each column, the first value is the c
 full_X = data.iloc[:, 1:].to_numpy() # the values fron 2 onwards are the data that contributed to the taste
 
 X_garbage = np.random.randn(len(full_X[:, x_classes[0]]))
-print("Garbage:", X_garbage)
+#print("Garbage:", X_garbage)
 
+X = np.empty((full_X.shape[0], 0))
+#X = X_garbage # makes sure there is the garbage
 
-X = X_garbage # makes sure there is the garbage
 for i in range(len(x_classes)):
     X = np.column_stack((X,(full_X[:, x_classes[i]]))) # this will add the random classes that i picked to the x
 
@@ -323,7 +336,7 @@ print(confusion_matrix)"""
 
 print("Actual:", np.bincount(y, minlength=3))
 
-weights, biases = neural_network_multiple_hidden_layers([5,16,8,3], 5000, X_normalized, y, 0.2, 0.01, 0)
+weights, biases = neural_network_multiple_hidden_layers([4,16,8,3], 5000, X_normalized, y, 0.2, 0.01, 0)
 # chose 0.1 for l2 because it produced values close to the original loss, so neither the old loss or the new 
 # l2 regularization thing would have too disproportionate of an effect
 # then i chose 0.01 because 0.1 was causing loss problems and the confusion matrix was kinda bad
