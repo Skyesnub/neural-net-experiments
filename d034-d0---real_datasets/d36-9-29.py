@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore', category=RuntimeWarning) # warnings are annoyi
 rng = np.random.default_rng()
 x_classes = rng.choice(11, size=4, replace=False)
 
-x_classes = np.array([2, 3, 0, 8]) # fixing the training columns to 0 7 1 and 10 because they work well together to 
+x_classes = np.array([0, 7, 1, 10]) # fixing the training columns to 0 7 1 and 10 because they work well together to 
 # provide a conclusive answer
 
 # really bad combos (and losses):
